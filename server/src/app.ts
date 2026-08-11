@@ -18,14 +18,40 @@ import { errorHandler } from './middleware/errorHandler';
 
 const app: Application = express();
 
-// Security HTTP Headers with Helmet
+// 1. Top-Level CORS configuration allowing Vercel and local origins dynamically
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.includes('vercel.app')
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// 2. Security HTTP Headers with Helmet
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 
-// General Rate Limiter (Skipped during local development)
+// 3. General Rate Limiter (Skipped during local development)
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -39,7 +65,7 @@ const generalLimiter = rateLimit({
 });
 app.use(generalLimiter);
 
-// Strict Rate Limiter for Authentication endpoints (Skipped during local development)
+// 4. Strict Rate Limiter for Authentication endpoints (Skipped during local development)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15,
@@ -54,29 +80,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// CORS Middlewares allowing Vercel and local origins dynamically
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        process.env.CLIENT_URL,
-      ].filter(Boolean);
-
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.includes('vercel.app')
-      ) {
-        return callback(null, true);
-      }
-      return callback(null, true);
-    },
-    credentials: true,
-  })
-);
-
+// 5. Body Parsers & Cookie Parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
