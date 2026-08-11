@@ -5,11 +5,13 @@ import { User } from '../models/User';
 import { Category } from '../models/Category';
 import { StudentProfile } from '../models/StudentProfile';
 
-// Enforce DNS resolution using Google & Cloudflare DNS for MongoDB Atlas SRV compatibility
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-} catch {
-  // Ignore fallback if custom DNS set
+// Only set custom DNS fallback during local development on Windows
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+  } catch {
+    // Ignore fallback if custom DNS set
+  }
 }
 
 export async function autoSeedDefaultData() {
@@ -88,12 +90,16 @@ export const connectDB = async (): Promise<void> => {
 
   try {
     const conn = await mongoose.connect(connStr, {
-      serverSelectionTimeoutMS: isAtlas ? 15000 : 3000,
+      serverSelectionTimeoutMS: 15000,
     });
     console.log(`[MongoDB] Connected to ${isAtlas ? 'MongoDB Atlas Cloud' : 'database'}: ${conn.connection.host}`);
     await autoSeedDefaultData();
   } catch (error: any) {
-    console.log(`[MongoDB] Primary database connection failed (${error?.code || 'ERROR'}). Falling back to In-Memory MongoDB Engine...`);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[MongoDB] Production MongoDB Atlas Connection Error:', error);
+      process.exit(1);
+    }
+    console.log(`[MongoDB] Development connection failed. Falling back to In-Memory engine...`);
     try {
       const { MongoMemoryServer } = require('mongodb-memory-server');
       const mongod = await MongoMemoryServer.create();
