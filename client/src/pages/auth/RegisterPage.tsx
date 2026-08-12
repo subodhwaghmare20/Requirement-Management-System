@@ -9,7 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { OTPVerificationModal } from '../../components/auth/OTPVerificationModal';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, KeyRound } from 'lucide-react';
 import { AuthResponse } from '../../types';
 
 const registerSchema = z.object({
@@ -37,10 +37,13 @@ export const RegisterPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const enteredEmail = watch('email');
 
   const onSubmit = async (data: RegisterFormData) => {
     setErrorMessage(null);
@@ -50,7 +53,7 @@ export const RegisterPage: React.FC = () => {
       setPendingEmail(data.email);
       setDevOtp(res.devOtp);
       setOtpModalOpen(true);
-      showToast('Registration initiated! Please verify the OTP sent to your email.', 'info');
+      showToast('Registration initiated! Please check your email for the 6-digit OTP code.', 'info');
     } catch (err: any) {
       const msg = err.message || 'Registration failed. Please check your details.';
       setErrorMessage(msg);
@@ -58,6 +61,15 @@ export const RegisterPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOpenOtpDirectly = () => {
+    if (!enteredEmail || !enteredEmail.includes('@')) {
+      showToast('Please enter your email address first', 'error');
+      return;
+    }
+    setPendingEmail(enteredEmail);
+    setOtpModalOpen(true);
   };
 
   const handleOtpSuccess = (authRes: AuthResponse) => {
@@ -112,11 +124,22 @@ export const RegisterPage: React.FC = () => {
             </Button>
           </form>
 
-          <div className="text-center text-xs text-slate-500">
-            Already registered?{' '}
-            <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
-              Sign in here
-            </Link>
+          <div className="pt-2 text-center space-y-2">
+            <button
+              type="button"
+              onClick={handleOpenOtpDirectly}
+              className="text-xs font-semibold text-indigo-600 hover:underline flex items-center justify-center gap-1 mx-auto"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Already received OTP? Enter 6-digit code here</span>
+            </button>
+
+            <div className="text-xs text-slate-500">
+              Already registered?{' '}
+              <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
+                Sign in here
+              </Link>
+            </div>
           </div>
         </div>
       </div>
