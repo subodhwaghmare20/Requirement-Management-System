@@ -13,17 +13,32 @@ export interface LoginPayload {
   password?: string;
 }
 
+export interface SendOtpResponse {
+  message: string;
+  devOtp?: string;
+}
+
 export const authService = {
-  async register(payload: RegisterPayload): Promise<AuthResponse> {
-    const res = await API.post<ApiResponse<AuthResponse>>('/auth/register', {
+  async register(payload: RegisterPayload): Promise<AuthResponse & { requiresOtpVerification?: boolean; devOtp?: string }> {
+    const res = await API.post<ApiResponse<AuthResponse & { requiresOtpVerification?: boolean; devOtp?: string }>>('/auth/register', {
       ...payload,
       role: 'STUDENT',
     });
     return res.data.data;
   },
 
-  async login(payload: LoginPayload): Promise<AuthResponse> {
-    const res = await API.post<ApiResponse<AuthResponse>>('/auth/login', payload);
+  async sendOtp(email: string): Promise<SendOtpResponse> {
+    const res = await API.post<ApiResponse<SendOtpResponse>>('/auth/send-otp', { email });
+    return res.data.data;
+  },
+
+  async verifyOtp(email: string, otp: string): Promise<AuthResponse> {
+    const res = await API.post<ApiResponse<AuthResponse>>('/auth/verify-otp', { email, otp });
+    return res.data.data;
+  },
+
+  async login(payload: LoginPayload): Promise<AuthResponse & { requiresOtpVerification?: boolean }> {
+    const res = await API.post<ApiResponse<AuthResponse & { requiresOtpVerification?: boolean }>>('/auth/login', payload);
     return res.data.data;
   },
 

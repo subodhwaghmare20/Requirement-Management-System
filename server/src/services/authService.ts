@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { User, IUser, UserRole } from '../models/User';
 import { StudentProfile } from '../models/StudentProfile';
+import { EmailService } from './emailService';
 import { AppError } from '../utils/appError';
 
 export interface RegisterDTO {
@@ -27,8 +28,76 @@ export class AuthService {
     });
   }
 
+  private static generateRandomOtp(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  public static async sendOtp(email: string) {
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      throw new AppError('No user account found with this email address', 404);
+    }
+
+    const rawOtp = this.generateRandomOtp();
+    const salt = await bcrypt.genSalt(10);
+    const hashedOtp = await bcrypt.hash(rawOtp, salt);
+
+    user.emailOtp = hashedOtp;
+    user.emailOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
+    await EmailService.sendOtpEmail(user.email, rawOtp, user.name);
+
+    return {
+      message: `Verification OTP sent to ${user.email}`,
+      devOtp: process.env.NODE_ENV !== 'production' ? rawOtp : undefined,
+    };
+  }
+
+  public static async verifyOtp(email: string, otp: string) {
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+emailOtp +emailOtpExpires');
+    if (!user) {
+      throw new AppError('User account not found', 404);
+    }
+
+    if (!user.emailOtp || !user.emailOtpExpires) {
+      throw new AppError('No active OTP found. Please request a new OTP code.', 400);
+    }
+
+    if (user.emailOtpExpires.getTime() < Date.now()) {
+      throw new AppError('OTP code has expired. Please click resend to get a new code.', 400);
+    }
+
+    const isMatch = await bcrypt.compare(otp, user.emailOtp);
+    if (!isMatch) {
+      throw new AppError('Invalid OTP code. Please double check and try again.', 400);
+    }
+
+    user.isEmailVerified = true;
+    user.emailOtp = undefined;
+    user.emailOtpExpires = undefined;
+    await user.save();
+
+    const token = this.generateToken(user);
+    const userObj = user.toObject();
+    delete (userObj as any).passwordHash;
+    delete (userObj as any).emailOtp;
+    delete (userObj as any).emailOtpExpires;
+
+    let studentProfile = null;
+    if (user.role === 'STUDENT') {
+      studentProfile = await StudentProfile.findOne({ userId: user._id });
+    }
+
+    return {
+      user: userObj,
+      studentProfile,
+      token,
+      message: 'Email address verified successfully!',
+    };
+  }
+
   public static async register(data: RegisterDTO) {
-    // 1. Enforce Student registration for public signup
     if (data.role && data.role !== 'STUDENT') {
       throw new AppError(
         'Trainer, HR, and Admin accounts cannot be created via public registration.',
@@ -42,7 +111,6 @@ export class AuthService {
       throw new AppError('An account with this email address already exists', 400);
     }
 
-    // 2. Hash password with bcrypt
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(data.password!, salt);
 
@@ -53,22 +121,25 @@ export class AuthService {
       role: 'STUDENT',
       phone: data.phone || '',
       isActive: true,
+      isEmailVerified: false,
     });
 
-    // 3. Create StudentProfile
     await StudentProfile.create({
       userId: user._id,
       skills: [],
       experienceLevel: 'FRESHER',
     });
 
-    const token = this.generateToken(user);
+    // Send OTP automatically upon registration
+    const otpResult = await this.sendOtp(email);
+
     const userObj = user.toObject();
     delete (userObj as any).passwordHash;
 
     return {
       user: userObj,
-      token,
+      requiresOtpVerification: true,
+      devOtp: otpResult.devOtp,
     };
   }
 
@@ -101,6 +172,7 @@ export class AuthService {
       user: userObj,
       studentProfile,
       token,
+      requiresOtpVerification: !user.isEmailVerified && user.role === 'STUDENT',
     };
   }
 

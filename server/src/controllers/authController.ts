@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
-import { registerSchema, loginSchema, updatePasswordSchema } from '../validators/authValidator';
+import {
+  registerSchema,
+  loginSchema,
+  updatePasswordSchema,
+  sendOtpSchema,
+  verifyOtpSchema
+} from '../validators/authValidator';
 import { successResponse } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../utils/appError';
@@ -24,8 +30,49 @@ export class AuthController {
     try {
       const validated = registerSchema.parse(req.body);
       const result = await AuthService.register(validated);
+      return successResponse(
+        res,
+        result,
+        'Student registered. Please verify the OTP sent to your email.',
+        201
+      );
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        const msg = error.errors.map((e: any) => e.message).join(', ');
+        return next(new AppError(msg, 400));
+      }
+      next(error);
+    }
+  };
+
+  public static sendOtp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validated = sendOtpSchema.parse(req.body);
+      const result = await AuthService.sendOtp(validated.email);
+      return successResponse(res, result, result.message, 200);
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        const msg = error.errors.map((e: any) => e.message).join(', ');
+        return next(new AppError(msg, 400));
+      }
+      next(error);
+    }
+  };
+
+  public static verifyOtp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const validated = verifyOtpSchema.parse(req.body);
+      const result = await AuthService.verifyOtp(validated.email, validated.otp);
       AuthController.setAuthCookie(res, result.token);
-      return successResponse(res, result, 'Student registered successfully', 201);
+      return successResponse(res, result, result.message, 200);
     } catch (error: any) {
       if (error.name === 'ZodError') {
         const msg = error.errors.map((e: any) => e.message).join(', ');
@@ -43,7 +90,9 @@ export class AuthController {
     try {
       const validated = loginSchema.parse(req.body);
       const result = await AuthService.login(validated);
-      AuthController.setAuthCookie(res, result.token);
+      if (result.token) {
+        AuthController.setAuthCookie(res, result.token);
+      }
       return successResponse(res, result, 'Login successful', 200);
     } catch (error: any) {
       if (error.name === 'ZodError') {

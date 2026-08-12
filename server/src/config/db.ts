@@ -5,7 +5,6 @@ import { User } from '../models/User';
 import { Category } from '../models/Category';
 import { StudentProfile } from '../models/StudentProfile';
 
-// Only set custom DNS fallback during local development on Windows
 if (process.env.NODE_ENV !== 'production') {
   try {
     dns.setServers(['8.8.8.8', '1.1.1.1']);
@@ -37,6 +36,7 @@ export async function autoSeedDefaultData() {
     passwordHash,
     role: 'STUDENT',
     isActive: true,
+    isEmailVerified: true,
     phone: '+91 9876543210',
   });
 
@@ -60,6 +60,7 @@ export async function autoSeedDefaultData() {
     passwordHash,
     role: 'TRAINER',
     isActive: true,
+    isEmailVerified: true,
     phone: '+91 9876543211',
   });
 
@@ -69,6 +70,7 @@ export async function autoSeedDefaultData() {
     passwordHash,
     role: 'HR',
     isActive: true,
+    isEmailVerified: true,
     phone: '+91 9876543212',
   });
 
@@ -78,6 +80,7 @@ export async function autoSeedDefaultData() {
     passwordHash,
     role: 'ADMIN',
     isActive: true,
+    isEmailVerified: true,
     phone: '+91 9876543213',
   });
 

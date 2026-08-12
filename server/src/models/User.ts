@@ -10,6 +10,9 @@ export interface IUser extends Document {
   passwordHash: string;
   role: UserRole;
   isActive: boolean;
+  isEmailVerified: boolean;
+  emailOtp?: string;
+  emailOtpExpires?: Date;
   phone?: string;
   avatar?: string;
   createdAt: Date;
@@ -46,6 +49,18 @@ const UserSchema: Schema = new Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailOtp: {
+      type: String,
+      select: false,
+    },
+    emailOtpExpires: {
+      type: Date,
+      select: false,
     },
     phone: {
       type: String,

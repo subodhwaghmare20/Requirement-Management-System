@@ -45,6 +45,7 @@ const seedData = async () => {
       passwordHash,
       role: 'STUDENT',
       isActive: true,
+      isEmailVerified: true,
       phone: '+91 9876543210',
     });
 
@@ -68,6 +69,7 @@ const seedData = async () => {
       passwordHash,
       role: 'TRAINER',
       isActive: true,
+      isEmailVerified: true,
       phone: '+91 9876543211',
     });
 
@@ -77,6 +79,7 @@ const seedData = async () => {
       passwordHash,
       role: 'HR',
       isActive: true,
+      isEmailVerified: true,
       phone: '+91 9876543212',
     });
 
@@ -86,6 +89,7 @@ const seedData = async () => {
       passwordHash,
       role: 'ADMIN',
       isActive: true,
+      isEmailVerified: true,
       phone: '+91 9876543213',
     });
 

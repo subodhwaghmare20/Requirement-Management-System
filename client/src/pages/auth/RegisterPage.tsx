@@ -3,11 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { OTPVerificationModal } from '../../components/auth/OTPVerificationModal';
 import { ShieldAlert } from 'lucide-react';
+import { AuthResponse } from '../../types';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -19,11 +22,17 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterPage: React.FC = () => {
-  const { register: registerAuth } = useAuth();
+  const { updateLocalUser, updateLocalProfile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // OTP Modal State
+  const [otpModalOpen, setOtpModalOpen] = useState<boolean>(false);
+  const [pendingEmail, setPendingEmail] = useState<string>('');
+  const [devOtp, setDevOtp] = useState<string | undefined>(undefined);
 
   const {
     register,
@@ -37,9 +46,11 @@ export const RegisterPage: React.FC = () => {
     setErrorMessage(null);
     setIsSubmitting(true);
     try {
-      await registerAuth(data);
-      showToast('Student account registered successfully!', 'success');
-      navigate('/dashboard');
+      const res = await authService.register(data);
+      setPendingEmail(data.email);
+      setDevOtp(res.devOtp);
+      setOtpModalOpen(true);
+      showToast('Registration initiated! Please verify the OTP sent to your email.', 'info');
     } catch (err: any) {
       const msg = err.message || 'Registration failed. Please check your details.';
       setErrorMessage(msg);
@@ -47,6 +58,19 @@ export const RegisterPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOtpSuccess = (authRes: AuthResponse) => {
+    setOtpModalOpen(false);
+    if (authRes.token) {
+      localStorage.setItem('portal_token', authRes.token);
+    }
+    updateLocalUser(authRes.user);
+    if (authRes.studentProfile) {
+      updateLocalProfile(authRes.studentProfile);
+    }
+    showToast('Student account verified & logged in!', 'success');
+    navigate('/dashboard');
   };
 
   return (
@@ -62,7 +86,7 @@ export const RegisterPage: React.FC = () => {
               Create Student Account
             </h1>
             <p className="text-xs text-slate-500">
-              Register to explore and apply for external job drives
+              Register with your email to explore and apply for job drives
             </p>
           </div>
 
@@ -84,7 +108,7 @@ export const RegisterPage: React.FC = () => {
             <Input label="Password" type="password" placeholder="At least 6 characters" {...register('password')} error={errors.password?.message} />
 
             <Button type="submit" variant="primary" fullWidth size="lg" isLoading={isSubmitting}>
-              Create Student Account
+              Send Verification OTP
             </Button>
           </form>
 
@@ -96,6 +120,15 @@ export const RegisterPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        email={pendingEmail}
+        isOpen={otpModalOpen}
+        onClose={() => setOtpModalOpen(false)}
+        onSuccess={handleOtpSuccess}
+        initialDevOtp={devOtp}
+      />
     </div>
   );
 };
