@@ -68,18 +68,21 @@ export class EmailService {
       </div>
     `;
 
-    try {
-      const info = await transporter.sendMail({
+    // Dispatch email asynchronously in background so HTTP response returns in < 100ms
+    transporter
+      .sendMail({
         from: `"${process.env.SMTP_FROM_NAME || 'Placement Portal'}" <${process.env.SMTP_USER}>`,
         to: email,
         subject: `${otp} is your Email Verification Code — External Job Portal`,
         html: htmlContent,
+      })
+      .then((info) => {
+        console.log(`[EmailService] OTP email delivered to ${email}. MessageId: ${info.messageId}`);
+      })
+      .catch((err) => {
+        console.error('[EmailService] Error delivering OTP email:', err);
       });
-      console.log(`[EmailService] OTP email delivered successfully to ${email}. MessageId: ${info.messageId}`);
-      return true;
-    } catch (err) {
-      console.error('[EmailService] Error delivering OTP email:', err);
-      return false;
-    }
+
+    return true;
   }
 }
