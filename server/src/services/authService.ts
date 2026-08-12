@@ -108,7 +108,27 @@ export class AuthService {
     const email = data.email.toLowerCase();
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw new AppError('An account with this email address already exists', 400);
+      if (existingUser.isEmailVerified) {
+        throw new AppError('An account with this email address already exists. Please sign in.', 400);
+      }
+
+      // If user exists but is NOT verified yet, update details & resend fresh OTP
+      const salt = await bcrypt.genSalt(10);
+      existingUser.name = data.name;
+      existingUser.passwordHash = await bcrypt.hash(data.password!, salt);
+      existingUser.phone = data.phone || existingUser.phone;
+      await existingUser.save();
+
+      const otpResult = await this.sendOtp(email);
+
+      const userObj = existingUser.toObject();
+      delete (userObj as any).passwordHash;
+
+      return {
+        user: userObj,
+        requiresOtpVerification: true,
+        devOtp: otpResult.devOtp,
+      };
     }
 
     const salt = await bcrypt.genSalt(10);
