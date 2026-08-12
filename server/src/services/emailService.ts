@@ -2,21 +2,34 @@ import nodemailer from 'nodemailer';
 
 export class EmailService {
   private static getTransporter() {
-    const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
-    if (!host || !user || !pass) {
+    if (!user || !pass) {
       return null;
     }
 
+    const host = process.env.SMTP_HOST;
+    if (host && host.includes('gmail')) {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user,
+          pass,
+        },
+      });
+    }
+
     return nodemailer.createTransport({
-      host,
+      host: host || 'smtp.gmail.com',
       port: Number(process.env.SMTP_PORT) || 587,
       secure: Number(process.env.SMTP_PORT) === 465,
       auth: {
         user,
         pass,
+      },
+      tls: {
+        rejectUnauthorized: false,
       },
     });
   }
@@ -55,21 +68,18 @@ export class EmailService {
       </div>
     `;
 
-    // Fire email delivery asynchronously in the background so API responds instantly (< 200ms)
-    transporter
-      .sendMail({
+    try {
+      const info = await transporter.sendMail({
         from: `"${process.env.SMTP_FROM_NAME || 'Placement Portal'}" <${process.env.SMTP_USER}>`,
         to: email,
         subject: `${otp} is your Email Verification Code — External Job Portal`,
         html: htmlContent,
-      })
-      .then((info) => {
-        console.log(`[EmailService] OTP email delivered to ${email}. MessageId: ${info.messageId}`);
-      })
-      .catch((err) => {
-        console.error('[EmailService] SMTP error when delivering email:', err);
       });
-
-    return true;
+      console.log(`[EmailService] OTP email delivered successfully to ${email}. MessageId: ${info.messageId}`);
+      return true;
+    } catch (err) {
+      console.error('[EmailService] Error delivering OTP email:', err);
+      return false;
+    }
   }
 }
