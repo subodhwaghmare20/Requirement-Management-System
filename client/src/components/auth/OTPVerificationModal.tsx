@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { authService } from '../../services/authService';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../common/Button';
-import { Mail, CheckCircle2, RefreshCw, X } from 'lucide-react';
+import { Mail, CheckCircle2, RefreshCw, X, ShieldCheck } from 'lucide-react';
 import { AuthResponse } from '../../types';
 
 interface OTPVerificationModalProps {
@@ -134,13 +134,20 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
           </button>
         </div>
 
-        <div className="space-y-1 text-xs text-slate-600">
+        <div className="space-y-2 text-xs text-slate-600">
           <p>
-            We have sent a 6-digit verification code to <span className="font-semibold text-slate-900">{email}</span>.
+            We have generated a 6-digit verification code for <span className="font-semibold text-slate-900">{email}</span>.
           </p>
+
           {devOtp && (
-            <div className="mt-2 p-2 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium">
-              💡 Dev Mode OTP: <span className="font-bold text-amber-900">{devOtp}</span>
+            <div className="p-3 rounded-lg bg-indigo-50/70 border border-indigo-100 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-indigo-900 font-medium">
+                <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>Verification OTP Code:</span>
+              </div>
+              <span className="text-base font-bold tracking-widest text-indigo-700 font-mono bg-white px-2.5 py-1 rounded border border-indigo-200 shadow-2xs">
+                {devOtp}
+              </span>
             </div>
           )}
         </div>
@@ -171,7 +178,7 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         </form>
 
         <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-          <span className="text-slate-500">Didn't receive code?</span>
+          <span className="text-slate-500">Didn't receive email?</span>
           <button
             type="button"
             disabled={countdown > 0 || isResending}

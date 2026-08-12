@@ -50,7 +50,7 @@ export class AuthService {
 
     return {
       message: `Verification OTP sent to ${user.email}`,
-      devOtp: process.env.NODE_ENV !== 'production' ? rawOtp : undefined,
+      devOtp: rawOtp,
     };
   }
 
