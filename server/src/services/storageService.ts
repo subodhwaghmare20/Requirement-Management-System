@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 
 export interface StorageUploadResult {
   url: string;
@@ -58,29 +59,76 @@ export class LocalStorageProvider implements IStorageProvider {
 }
 
 /**
- * Cloudinary Storage Provider Stub Example
- * Ready to be swapped in when Cloudinary credentials are added.
+ * Cloudinary Storage Provider
+ * Uploads resume PDFs and documents directly to Cloudinary CDN
  */
 export class CloudinaryStorageProvider implements IStorageProvider {
+  constructor() {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
+
   async uploadResume(
     file: Express.Multer.File
   ): Promise<StorageUploadResult> {
-    // Cloudinary SDK upload implementation goes here
-    throw new Error('Cloudinary provider configuration required.');
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'raw',
+          folder: 'resumes',
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve({
+            url: result?.secure_url || '',
+            originalName: file.originalname,
+          });
+        }
+      );
+
+      if (file.buffer) {
+        uploadStream.end(file.buffer);
+      } else if (file.path) {
+        fs.createReadStream(file.path).pipe(uploadStream);
+      } else {
+        reject(new Error('File buffer or path missing for Cloudinary upload'));
+      }
+    });
   }
 
-  async deleteResume(_fileUrl: string): Promise<void> {
-    // Cloudinary destroy implementation goes here
+  async deleteResume(fileUrl: string): Promise<void> {
+    if (!fileUrl || !fileUrl.includes('cloudinary')) return;
+    try {
+      const parts = fileUrl.split('/');
+      const publicIdWithExt = parts.slice(parts.indexOf('resumes')).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+      await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+    } catch {
+      // Ignore deletion errors
+    }
   }
 }
 
-// Storage Service Factory - Defaults to LocalStorageProvider
+// Storage Service Factory - Dynamically switches between Cloudinary & Local Storage
 export class StorageService {
   private static instance: IStorageProvider;
 
   public static getProvider(): IStorageProvider {
     if (!this.instance) {
-      this.instance = new LocalStorageProvider();
+      if (
+        process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET
+      ) {
+        this.instance = new CloudinaryStorageProvider();
+        console.log('[Storage] Using Cloudinary Cloud Storage Provider');
+      } else {
+        this.instance = new LocalStorageProvider();
+        console.log('[Storage] Using Local Disk Storage Provider');
+      }
     }
     return this.instance;
   }
