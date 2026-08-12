@@ -4,21 +4,17 @@ import { Requirement, Category } from '../../types';
 import { requirementService } from '../../services/requirementService';
 import { categoryService } from '../../services/categoryService';
 import { RequirementCard } from '../../components/requirements/RequirementCard';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Skeleton } from '../../components/common/Skeleton';
+import { EmptyState } from '../../components/common/EmptyState';
+import { Button } from '../../components/common/Button';
 import { useToast } from '../../context/ToastContext';
 import {
   Search,
-  Filter,
   SlidersHorizontal,
   Briefcase,
-  Globe,
-  MapPin,
-  DollarSign,
   ChevronLeft,
   ChevronRight,
   X,
-  Sparkles,
   ArrowUpDown
 } from 'lucide-react';
 
@@ -46,7 +42,6 @@ export const JobListingPage: React.FC = () => {
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState<boolean>(false);
 
-  // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -55,7 +50,6 @@ export const JobListingPage: React.FC = () => {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Load Categories once
   useEffect(() => {
     categoryService
       .getCategories()
@@ -63,7 +57,6 @@ export const JobListingPage: React.FC = () => {
       .catch((err) => console.error('Failed to load categories:', err));
   }, []);
 
-  // Load Job Requirements from API with server-side pagination & filters
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
@@ -77,7 +70,7 @@ export const JobListingPage: React.FC = () => {
         minSalary: minSalary !== '' ? Number(minSalary) : undefined,
         sort: sortBy,
         page,
-        limit: 9,
+        limit: 10,
       });
       setRequirements(data.requirements);
       setTotal(data.total);
@@ -117,56 +110,99 @@ export const JobListingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Hero Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-extrabold uppercase tracking-wider mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Verified External Drive Directory</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Explore External Job Opportunities
-          </h1>
-          <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
-            Browse verified openings from LinkedIn, Naukri, Indeed, Foundit, and corporate career pages curated for institute students.
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Explore Opportunities</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Browse verified job drives aggregated from top career platforms.
           </p>
+        </div>
+        <div className="text-xs font-semibold text-slate-500 shrink-0">
+          {total} {total === 1 ? 'Opportunity' : 'Opportunities'} Found
         </div>
       </div>
 
-      {/* Main Content Layout: Sidebar + Grid */}
-      <div className="flex flex-col lg:flex-row gap-8">
+      {/* Search & Sort Bar */}
+      <div className="card-surface p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by job title, company, skills, or location..."
+            className="w-full pl-10 pr-8 py-2 rounded-lg border border-slate-200 bg-slate-50/50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-between sm:justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileFilterOpen(true)}
+            className="lg:hidden"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filters</span>
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value as any);
+                setPage(1);
+              }}
+              className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="deadline">Deadline Approaching</option>
+              <option value="salary_high">Salary (High to Low)</option>
+              <option value="salary_low">Salary (Low to High)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Layout: Sidebar + Job Grid */}
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Desktop Filter Sidebar */}
-        <aside className="w-full lg:w-72 shrink-0 space-y-6 hidden lg:block">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2 font-extrabold text-slate-900 text-base">
-                <SlidersHorizontal className="w-4.5 h-4.5 text-blue-600" />
-                <span>Filters & Refine</span>
-              </div>
+        <aside className="w-full lg:w-64 shrink-0 hidden lg:block space-y-4">
+          <div className="card-surface p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="font-semibold text-slate-900 text-sm">Refine Results</span>
               <button
                 onClick={handleClearFilters}
-                className="text-xs text-blue-600 font-bold hover:underline"
+                className="text-xs text-indigo-600 font-medium hover:underline"
               >
-                Reset All
+                Reset
               </button>
             </div>
 
-            {/* Source Platform Filter */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Source Platform
-              </label>
+            {/* Platform Filter */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">Source Platform</label>
               <select
                 value={selectedPlatform}
                 onChange={(e) => {
                   setSelectedPlatform(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm font-medium"
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-medium focus:ring-2 focus:ring-indigo-500/20"
               >
-                <option value="">All Source Platforms</option>
+                <option value="">All Platforms</option>
                 <option value="LinkedIn">LinkedIn</option>
                 <option value="Naukri">Naukri</option>
                 <option value="Indeed">Indeed</option>
@@ -178,17 +214,15 @@ export const JobListingPage: React.FC = () => {
             </div>
 
             {/* Work Mode Filter */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Work Mode
-              </label>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">Work Mode</label>
               <select
                 value={selectedWorkMode}
                 onChange={(e) => {
                   setSelectedWorkMode(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm font-medium"
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-medium focus:ring-2 focus:ring-indigo-500/20"
               >
                 <option value="">All Work Modes</option>
                 <option value="WORK_FROM_OFFICE">Work From Office</option>
@@ -198,40 +232,35 @@ export const JobListingPage: React.FC = () => {
             </div>
 
             {/* Job Type Filter */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Job Type
-              </label>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">Job Type</label>
               <select
                 value={selectedJobType}
                 onChange={(e) => {
                   setSelectedJobType(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm font-medium"
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-medium focus:ring-2 focus:ring-indigo-500/20"
               >
                 <option value="">All Job Types</option>
                 <option value="FULL_TIME">Full Time</option>
                 <option value="INTERNSHIP">Internship</option>
                 <option value="CONTRACT">Contract</option>
                 <option value="PART_TIME">Part Time</option>
-                <option value="APPRENTICESHIP">Apprenticeship</option>
               </select>
             </div>
 
             {/* Category Filter */}
             {categories.length > 0 && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                  Domain Category
-                </label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">Domain Category</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => {
                     setSelectedCategory(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm font-medium"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-900 text-xs font-medium focus:ring-2 focus:ring-indigo-500/20"
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
@@ -242,157 +271,72 @@ export const JobListingPage: React.FC = () => {
                 </select>
               </div>
             )}
-
-            {/* Minimum Salary Filter */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Min Expected Salary (₹)
-              </label>
-              <input
-                type="number"
-                value={minSalary}
-                onChange={(e) => {
-                  setMinSalary(e.target.value !== '' ? Number(e.target.value) : '');
-                  setPage(1);
-                }}
-                placeholder="e.g. 400000"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm font-medium"
-              />
-            </div>
           </div>
         </aside>
 
-        {/* Main Feed Area */}
+        {/* Job Cards Feed */}
         <div className="flex-1 space-y-6">
-          {/* Top Controls: Search Bar & Sort Header */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
-            {/* Debounced Search Bar */}
-            <div className="relative flex-1">
-              <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search jobs by title, company, skills (e.g. React, Python), or location..."
-                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 text-slate-900 text-sm font-medium transition-all"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Controls: Mobile Filter Toggle + Sorting */}
-            <div className="flex items-center gap-3 shrink-0">
-              <button
-                onClick={() => setMobileFilterOpen(true)}
-                className="lg:hidden p-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-bold text-sm flex items-center gap-2"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span>Filters</span>
-              </button>
-
-              <div className="relative flex items-center gap-2">
-                <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0 hidden sm:block" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value as any);
-                    setPage(1);
-                  }}
-                  className="px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 text-slate-900 text-xs font-bold transition-all"
-                >
-                  <option value="newest">Sort: Newest First</option>
-                  <option value="oldest">Sort: Oldest First</option>
-                  <option value="deadline">Sort: Deadline Approaching</option>
-                  <option value="salary_high">Sort: Salary (High to Low)</option>
-                  <option value="salary_low">Sort: Salary (Low to High)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Job Count Summary */}
-          <div className="flex items-center justify-between px-2 text-xs font-semibold text-slate-500">
-            <span>
-              Showing {requirements.length} of {total} verified external job opportunities
-            </span>
-            {debouncedSearch && <span>Search: "{debouncedSearch}"</span>}
-          </div>
-
-          {/* Job Feed Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div key={n} className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4">
+                <div key={n} className="card-surface p-5 space-y-3">
                   <div className="flex items-center gap-3">
-                    <Skeleton className="w-12 h-12 rounded-2xl shrink-0" />
-                    <div className="space-y-2 flex-1">
+                    <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
+                    <div className="space-y-1.5 flex-1">
                       <Skeleton className="h-4 w-3/4" />
                       <Skeleton className="h-3 w-1/2" />
                     </div>
                   </div>
-                  <Skeleton className="h-16 w-full rounded-2xl" />
-                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-12 w-full rounded-md" />
                 </div>
               ))}
             </div>
           ) : requirements.length === 0 ? (
-            <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-500 space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-                <Briefcase className="w-8 h-8" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">No Job Opportunities Found</h3>
-                <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                  Try adjusting your search criteria or resetting active filters.
-                </p>
-              </div>
-              <button
-                onClick={handleClearFilters}
-                className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs"
-              >
-                Clear All Filters
-              </button>
-            </div>
+            <EmptyState
+              icon={Briefcase}
+              title="No Job Opportunities Found"
+              description="Try adjusting your search query or clearing active filters."
+              actionLabel="Reset Filters"
+              onAction={handleClearFilters}
+            />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {requirements.map((req) => (
-                <div key={req._id} onClick={() => navigate(`/jobs/${req._id}`)} className="cursor-pointer">
-                  <RequirementCard requirement={req} />
-                </div>
+                <RequirementCard
+                  key={req._id}
+                  requirement={req}
+                  onView={() => navigate(`/jobs/${req._id}`)}
+                />
               ))}
             </div>
           )}
 
-          {/* Server-Side Pagination Bar */}
+          {/* Pagination */}
           {pages > 1 && (
-            <div className="bg-white p-4 rounded-3xl border border-slate-200/80 flex items-center justify-between gap-4">
-              <button
+            <div className="card-surface p-3 flex items-center justify-between gap-4">
+              <Button
+                variant="outline"
+                size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-700 text-xs flex items-center gap-1 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Previous</span>
-              </button>
+              </Button>
 
-              <div className="text-xs font-bold text-slate-600">
+              <span className="text-xs text-slate-600 font-medium">
                 Page {page} of {pages}
-              </div>
+              </span>
 
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 disabled={page >= pages}
                 onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-700 text-xs flex items-center gap-1 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <span>Next</span>
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           )}
         </div>

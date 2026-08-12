@@ -5,8 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Briefcase, Lock, Mail, ArrowRight } from 'lucide-react';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Button } from '../../components/common/Button';
+import { Input } from '../../components/common/Input';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -53,131 +53,92 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-900 via-slate-850 to-blue-950">
-      <div className="w-full max-w-md">
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-slate-100/50">
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center p-4 sm:p-6 bg-slate-50/70">
+      <div className="w-full max-w-md space-y-6">
+        <div className="card-surface p-6 sm:p-8 space-y-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-blue-500/30">
-              <Briefcase className="w-7 h-7" />
+          <div className="text-center space-y-1">
+            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-base mx-auto mb-3">
+              EP
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Sign In
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Sign In to Your Account
             </h1>
-            <p className="text-sm text-slate-500 mt-1 font-medium">
-              Access External Job Opportunity Portal
+            <p className="text-xs text-slate-500">
+              Access the External Job Opportunity Portal
             </p>
           </div>
 
           {/* Error Alert */}
           {errorMessage && (
-            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-700 text-sm font-medium flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-              <span>{errorMessage}</span>
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              {errorMessage}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  placeholder="student@institute.edu"
-                  {...register('email')}
-                  className={`w-full pl-11 pr-4 py-3 rounded-xl border bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 text-slate-900 text-sm font-medium transition-all ${
-                    errors.email ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1.5 text-xs text-rose-500 font-medium">{errors.email.message}</p>
-              )}
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="student@institute.edu"
+              {...register('email')}
+              error={errors.email?.message}
+            />
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Password
-                </label>
-              </div>
-              <div className="relative">
-                <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  {...register('password')}
-                  className={`w-full pl-11 pr-4 py-3 rounded-xl border bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 text-slate-900 text-sm font-medium transition-all ${
-                    errors.password ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-blue-500'
-                  }`}
-                />
-              </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs text-rose-500 font-medium">{errors.password.message}</p>
-              )}
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              {...register('password')}
+              error={errors.password?.message}
+            />
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-70"
-            >
-              {isSubmitting ? (
-                <LoadingSpinner size="sm" label="" />
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
+            <Button type="submit" variant="primary" fullWidth size="lg" isLoading={isSubmitting}>
+              Sign In
+            </Button>
           </form>
 
-          {/* Quick Demo Fill Presets */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-center mb-3">
+          {/* Demo Presets */}
+          <div className="pt-4 border-t border-slate-100 space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block text-center">
               Quick Role Test Fill
-            </div>
+            </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => setDemoCredentials('student@institute.edu')}
-                className="p-2 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-600 text-left font-medium transition-colors"
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-left font-medium"
               >
-                🎓 Student Account
+                🎓 Student
               </button>
               <button
                 type="button"
                 onClick={() => setDemoCredentials('trainer@institute.edu')}
-                className="p-2 rounded-lg border border-slate-200 hover:border-amber-300 hover:bg-amber-50 text-slate-600 text-left font-medium transition-colors"
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-left font-medium"
               >
-                👨‍🏫 Trainer Account
+                👨‍🏫 Trainer
               </button>
               <button
                 type="button"
                 onClick={() => setDemoCredentials('hr@institute.edu')}
-                className="p-2 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-purple-50 text-slate-600 text-left font-medium transition-colors"
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-left font-medium"
               >
                 🏢 HR Manager
               </button>
               <button
                 type="button"
                 onClick={() => setDemoCredentials('admin@institute.edu')}
-                className="p-2 rounded-lg border border-slate-200 hover:border-rose-300 hover:bg-rose-50 text-slate-600 text-left font-medium transition-colors"
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-left font-medium"
               >
-                🛡️ System Admin
+                🛡️ Admin
               </button>
             </div>
           </div>
 
-          {/* Footer Link */}
-          <div className="mt-6 text-center text-sm text-slate-500 font-medium">
+          <div className="text-center text-xs text-slate-500">
             Don't have a student account?{' '}
-            <Link to="/register" className="text-blue-600 font-bold hover:underline">
+            <Link to="/register" className="text-indigo-600 font-semibold hover:underline">
               Register here
             </Link>
           </div>

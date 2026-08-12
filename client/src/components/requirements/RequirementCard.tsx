@@ -2,17 +2,16 @@ import React from 'react';
 import { Requirement } from '../../types';
 import { RequirementStatusBadge } from './RequirementStatusBadge';
 import { Badge } from '../common/Badge';
+import { Button } from '../common/Button';
 import {
-  Building2,
   MapPin,
   Briefcase,
-  DollarSign,
   Globe,
-  ExternalLink,
   Calendar,
   Eye,
   MousePointerClick,
-  Bookmark
+  Bookmark,
+  ArrowRight
 } from 'lucide-react';
 
 interface RequirementCardProps {
@@ -45,38 +44,23 @@ export const RequirementCard: React.FC<RequirementCardProps> = ({
   const companyLogo = requirement.companyLogo || companyObj?.logoUrl;
 
   const formatSalary = () => {
-    if (!requirement.salaryDisclosed) return 'Not Disclosed';
+    if (!requirement.salaryDisclosed) return null;
     if (requirement.salaryMin && requirement.salaryMax) {
-      return `₹${requirement.salaryMin.toLocaleString()} - ₹${requirement.salaryMax.toLocaleString()}`;
+      return `₹${(requirement.salaryMin / 100000).toFixed(1)}L - ₹${(requirement.salaryMax / 100000).toFixed(1)}L`;
     }
-    if (requirement.salaryMin) return `₹${requirement.salaryMin.toLocaleString()}+`;
-    return 'Disclosed';
+    if (requirement.salaryMin) return `₹${(requirement.salaryMin / 100000).toFixed(1)}L+`;
+    return null;
   };
 
-  const getPlatformBadgeColor = (platform: string) => {
-    switch (platform) {
-      case 'LinkedIn':
-        return 'blue';
-      case 'Naukri':
-        return 'indigo';
-      case 'Indeed':
-        return 'purple';
-      case 'Foundit':
-        return 'emerald';
-      case 'Company Website':
-        return 'amber';
-      default:
-        return 'slate';
-    }
-  };
+  const salaryFormatted = formatSalary();
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-5 relative group">
+    <div className="card-surface-hover p-5 sm:p-6 flex flex-col justify-between space-y-4 group">
       <div className="space-y-4">
-        {/* Top Header Row */}
+        {/* Header: Company Logo, Title, Bookmark */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-100 to-slate-200 border border-slate-200 flex items-center justify-center font-extrabold text-slate-700 text-lg overflow-hidden shrink-0">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-lg bg-slate-100 border border-slate-200/80 flex items-center justify-center font-bold text-slate-600 text-base shrink-0 overflow-hidden">
               {companyLogo ? (
                 <img
                   src={companyLogo}
@@ -90,15 +74,19 @@ export const RequirementCard: React.FC<RequirementCardProps> = ({
                 companyName.charAt(0).toUpperCase()
               )}
             </div>
-            <div>
-              <h3 className="font-extrabold text-slate-900 text-lg leading-tight hover:text-blue-600 transition-colors">
+            <div className="min-w-0">
+              <h3
+                onClick={() => onView && onView(requirement)}
+                className="font-semibold text-slate-900 text-base leading-snug truncate hover:text-indigo-600 cursor-pointer transition-colors"
+                title={requirement.title}
+              >
                 {requirement.title}
               </h3>
-              <p className="text-xs font-semibold text-slate-500">{companyName}</p>
+              <p className="text-xs text-slate-500 font-medium truncate mt-0.5">{companyName}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {showBookmarkButton && onToggleBookmark && (
               <button
                 type="button"
@@ -106,32 +94,47 @@ export const RequirementCard: React.FC<RequirementCardProps> = ({
                   e.stopPropagation();
                   onToggleBookmark(requirement, !isBookmarked);
                 }}
-                className={`p-2 rounded-xl border transition-all ${
+                className={`p-1.5 rounded-md border transition-colors ${
                   isBookmarked
-                    ? 'bg-blue-50 border-blue-200 text-blue-600'
-                    : 'bg-slate-50 border-slate-200/80 text-slate-400 hover:text-slate-700'
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                    : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300'
                 }`}
                 title={isBookmarked ? 'Remove Bookmark' : 'Save Job'}
               >
-                <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-blue-600' : ''}`} />
+                <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-indigo-600' : ''}`} />
               </button>
             )}
             <RequirementStatusBadge status={requirement.status} />
           </div>
         </div>
 
-        {/* Badges Row: Source Platform & Application Type */}
+        {/* Metadata Strip: Location, Exp, WorkMode */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
+          <div className="flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="truncate max-w-[120px]">{requirement.location}</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>{requirement.experience}</span>
+          </div>
+
+          {salaryFormatted && (
+            <div className="text-indigo-600 font-medium">
+              {salaryFormatted}
+            </div>
+          )}
+        </div>
+
+        {/* Source & Application Badges */}
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <Badge variant={getPlatformBadgeColor(requirement.sourcePlatform)} size="sm" icon={<Globe className="w-3 h-3" />}>
-            Source: {requirement.sourcePlatform}
+          <Badge variant="slate" size="sm" icon={<Globe className="w-3 h-3 text-slate-400" />}>
+            {requirement.sourcePlatform}
           </Badge>
 
           <Badge variant={requirement.applicationType === 'EXTERNAL_REDIRECT' ? 'purple' : 'emerald'} size="sm">
-            {requirement.applicationType === 'EXTERNAL_REDIRECT' ? '⚡ External Redirect' : '📝 Portal Application'}
-          </Badge>
-
-          <Badge variant="slate" size="sm">
-            {requirement.jobType.replace('_', ' ')}
+            {requirement.applicationType === 'EXTERNAL_REDIRECT' ? 'External Apply' : 'Portal Apply'}
           </Badge>
 
           <Badge variant="indigo" size="sm">
@@ -139,93 +142,77 @@ export const RequirementCard: React.FC<RequirementCardProps> = ({
           </Badge>
         </div>
 
-        {/* Details Grid */}
-        <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600 pt-2">
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="truncate">{requirement.location}</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span>Exp: {requirement.experience}</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <DollarSign className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span>{formatSalary()}</span>
-          </div>
-
-          {requirement.deadline && (
-            <div className="flex items-center gap-1.5 text-amber-700 font-semibold">
-              <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>Deadline: {new Date(requirement.deadline).toLocaleDateString()}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Skills Tag List */}
+        {/* Skills Tag List (max 4) */}
         {requirement.skills && requirement.skills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-2">
-            {requirement.skills.map((skill) => (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {requirement.skills.slice(0, 4).map((skill) => (
               <span
                 key={skill}
-                className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold"
+                className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium"
               >
                 {skill}
               </span>
             ))}
+            {requirement.skills.length > 4 && (
+              <span className="text-[11px] text-slate-400 font-medium self-center">
+                +{requirement.skills.length - 4} more
+              </span>
+            )}
           </div>
         )}
       </div>
 
-      {/* Footer Controls & Stats */}
-      <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 text-xs text-slate-400">
-        <div className="flex items-center gap-4">
+      {/* Footer: Date / Stats & Action CTA */}
+      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3">
           <span className="flex items-center gap-1" title="Views">
-            <Eye className="w-3.5 h-3.5" /> {requirement.viewsCount || 0}
+            <Eye className="w-3.5 h-3.5 text-slate-400" /> {requirement.viewsCount || 0}
           </span>
-          <span className="flex items-center gap-1" title="External Clicks">
-            <MousePointerClick className="w-3.5 h-3.5" /> {requirement.clicksCount || 0}
+          <span className="flex items-center gap-1" title="Apply Clicks">
+            <MousePointerClick className="w-3.5 h-3.5 text-slate-400" /> {requirement.clicksCount || 0}
           </span>
+          {requirement.deadline && (
+            <span className="hidden sm:flex items-center gap-1 text-amber-700 font-medium">
+              <Calendar className="w-3.5 h-3.5 text-amber-500" />
+              {new Date(requirement.deadline).toLocaleDateString()}
+            </span>
+          )}
         </div>
 
-        {showAdminControls && (
-          <div className="flex items-center gap-2">
-            {requirement.status === 'DRAFT' && onPublish && (
-              <button
-                onClick={() => onPublish(requirement)}
-                className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs transition-colors"
-              >
-                Publish
-              </button>
-            )}
-            {requirement.status === 'PUBLISHED' && onClose && (
-              <button
-                onClick={() => onClose(requirement)}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs transition-colors"
-              >
-                Close Drive
-              </button>
-            )}
-            {onEdit && (
-              <button
-                onClick={() => onEdit(requirement)}
-                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors"
-              >
-                Edit
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => onDelete(requirement)}
-                className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs transition-colors"
-              >
-                Delete
-              </button>
-            )}
-          </div>
-        )}
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
+          {showAdminControls ? (
+            <div className="flex items-center gap-1.5">
+              {requirement.status === 'DRAFT' && onPublish && (
+                <Button size="sm" variant="secondary" onClick={() => onPublish(requirement)}>
+                  Publish
+                </Button>
+              )}
+              {requirement.status === 'PUBLISHED' && onClose && (
+                <Button size="sm" variant="outline" onClick={() => onClose(requirement)}>
+                  Close
+                </Button>
+              )}
+              {onEdit && (
+                <Button size="sm" variant="outline" onClick={() => onEdit(requirement)}>
+                  Edit
+                </Button>
+              )}
+              {onDelete && (
+                <Button size="sm" variant="danger" onClick={() => onDelete(requirement)}>
+                  Delete
+                </Button>
+              )}
+            </div>
+          ) : (
+            onView && (
+              <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-700 font-medium" onClick={() => onView(requirement)}>
+                <span>View Job</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

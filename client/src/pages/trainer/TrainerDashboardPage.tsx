@@ -4,6 +4,7 @@ import { TrainerStats, requirementService } from '../../services/requirementServ
 import { Requirement } from '../../types';
 import { RequirementTable } from '../../components/requirements/RequirementTable';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Button } from '../../components/common/Button';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -11,10 +12,8 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  AlertTriangle,
   Plus,
-  ArrowRight,
-  TrendingUp
+  ArrowRight
 } from 'lucide-react';
 
 export const TrainerDashboardPage: React.FC = () => {
@@ -81,145 +80,83 @@ export const TrainerDashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="text-xs uppercase tracking-widest text-blue-400 font-extrabold block mb-1">
-            Trainer Workplace Dashboard
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome, Trainer {user?.name} 👋
-          </h1>
-          <p className="text-sm text-slate-300 mt-1">
-            Post verified external opportunities and monitor your student placement drives.
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Trainer Dashboard</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Post verified external opportunities and manage your placement drives.
           </p>
         </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            to="/dashboard/trainer/requirements/create"
-            className="px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Post Requirement</span>
-          </Link>
-
-          <Link
-            to="/dashboard/trainer/requirements"
-            className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm border border-slate-700 transition-all"
-          >
-            View All
+        <div className="flex items-center gap-2">
+          <Link to="/dashboard/trainer/requirements/create">
+            <Button variant="primary" size="sm">
+              <Plus className="w-4 h-4" />
+              <span>Post Requirement</span>
+            </Button>
           </Link>
         </div>
       </div>
 
-      {/* Statistics Cards Row */}
+      {/* KPI Stats */}
       {loading ? (
-        <div className="p-8 flex justify-center bg-white rounded-3xl border border-slate-200">
-          <LoadingSpinner size="md" label="Loading trainer stats..." />
+        <div className="p-8 flex justify-center card-surface">
+          <LoadingSpinner size="md" label="Loading stats..." />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-          {/* Total Requirements */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Briefcase className="w-6 h-6" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="card-surface p-5 space-y-1">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium">Total Postings</span>
+              <Briefcase className="w-4 h-4 text-indigo-600" />
             </div>
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                Total Postings
-              </span>
-              <span className="text-2xl font-extrabold text-slate-900 leading-tight">
-                {stats?.total || 0}
-              </span>
-            </div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.total || 0}</div>
           </div>
 
-          {/* Published */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-6 h-6" />
+          <div className="card-surface p-5 space-y-1">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium">Published</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             </div>
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                Published
-              </span>
-              <span className="text-2xl font-extrabold text-slate-900 leading-tight">
-                {stats?.published || 0}
-              </span>
-            </div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.published || 0}</div>
           </div>
 
-          {/* Drafts */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <Clock className="w-6 h-6" />
+          <div className="card-surface p-5 space-y-1">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium">Drafts</span>
+              <Clock className="w-4 h-4 text-amber-600" />
             </div>
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                Drafts Saved
-              </span>
-              <span className="text-2xl font-extrabold text-slate-900 leading-tight">
-                {stats?.drafts || 0}
-              </span>
-            </div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.drafts || 0}</div>
           </div>
 
-          {/* Closed */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
-              <XCircle className="w-6 h-6" />
+          <div className="card-surface p-5 space-y-1">
+            <div className="flex items-center justify-between text-slate-500">
+              <span className="text-xs font-medium">Closed</span>
+              <XCircle className="w-4 h-4 text-slate-400" />
             </div>
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                Closed Drives
-              </span>
-              <span className="text-2xl font-extrabold text-slate-900 leading-tight">
-                {stats?.closed || 0}
-              </span>
-            </div>
-          </div>
-
-          {/* Expired */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
-                Expired Drives
-              </span>
-              <span className="text-2xl font-extrabold text-slate-900 leading-tight">
-                {stats?.expired || 0}
-              </span>
-            </div>
+            <div className="text-2xl font-bold text-slate-900">{stats?.closed || 0}</div>
           </div>
         </div>
       )}
 
       {/* Recent Requirements Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="text-lg font-extrabold text-slate-900">Recent Postings</h2>
-          <Link
-            to="/dashboard/trainer/requirements"
-            className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1"
-          >
-            <span>View All Requirements Directory</span>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900">Recent Requirements</h2>
+          <Link to="/dashboard/trainer/requirements" className="text-xs text-indigo-600 font-medium hover:underline flex items-center gap-1">
+            <span>View All</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {recentRequirements.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-500 space-y-3">
-            <Briefcase className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="font-bold text-slate-700">No job requirements created yet</p>
-            <Link
-              to="/dashboard/trainer/requirements/create"
-              className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs"
-            >
-              Post First Job Requirement
+          <div className="p-8 text-center card-surface text-slate-500 space-y-2">
+            <p className="text-xs text-slate-500">No job requirements created yet.</p>
+            <Link to="/dashboard/trainer/requirements/create">
+              <Button variant="primary" size="sm">
+                Post First Requirement
+              </Button>
             </Link>
           </div>
         ) : (

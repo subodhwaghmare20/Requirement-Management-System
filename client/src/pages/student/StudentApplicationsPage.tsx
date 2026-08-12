@@ -4,17 +4,14 @@ import { Application } from '../../types';
 import { applicationService } from '../../services/applicationService';
 import { useToast } from '../../context/ToastContext';
 import { Badge } from '../../components/common/Badge';
+import { Button } from '../../components/common/Button';
+import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import {
   Briefcase,
   FileText,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
   ExternalLink,
-  ChevronRight,
-  UserCheck
+  ChevronRight
 } from 'lucide-react';
 
 export const StudentApplicationsPage: React.FC = () => {
@@ -71,62 +68,49 @@ export const StudentApplicationsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="text-xs uppercase tracking-widest text-blue-400 font-extrabold block mb-1">
-            Student Career Track
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            My Portal Applications
-          </h1>
-          <p className="text-sm text-slate-300 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">My Applications</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Track real-time status and resume snapshots of your active drive submissions.
           </p>
         </div>
-
-        <Link
-          to="/jobs"
-          className="px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-all shrink-0 text-center"
-        >
-          Explore More Drives
+        <Link to="/jobs">
+          <Button variant="primary" size="sm">
+            <span>Explore More Jobs</span>
+          </Button>
         </Link>
       </div>
 
-      {/* Applications List Table */}
       {loading ? (
-        <div className="p-12 flex justify-center bg-white rounded-3xl border border-slate-200">
-          <LoadingSpinner size="lg" label="Loading application history..." />
+        <div className="p-12 flex justify-center card-surface">
+          <LoadingSpinner size="lg" label="Loading applications..." />
         </div>
       ) : applications.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-500 space-y-4">
-          <Briefcase className="w-12 h-12 text-slate-300 mx-auto" />
-          <div>
-            <h3 className="font-bold text-base text-slate-700">No Portal Applications Submitted Yet</h3>
-            <p className="text-xs text-slate-500 mt-1">Browse active drives and apply using your verified resume profile.</p>
-          </div>
-          <Link
-            to="/jobs"
-            className="inline-block px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs"
-          >
-            Browse Jobs Directory
-          </Link>
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title="No Applications Submitted Yet"
+          description="Browse active drives and apply using your profile resume."
+          actionLabel="Explore Jobs"
+          onAction={() => (window.location.href = '/jobs')}
+        />
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="space-y-4">
+          {/* Desktop Table View */}
+          <div className="hidden md:block card-surface overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                  <th className="py-4 px-6">Company & Requirement</th>
-                  <th className="py-4 px-6">Applied Date</th>
-                  <th className="py-4 px-6">Resume Snapshot</th>
-                  <th className="py-4 px-6">Application Status</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
+                <tr className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="py-3.5 px-5">Requirement & Company</th>
+                  <th className="py-3.5 px-5">Applied Date</th>
+                  <th className="py-3.5 px-5">Resume Snapshot</th>
+                  <th className="py-3.5 px-5">Status</th>
+                  <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm font-medium">
+              <tbody className="divide-y divide-slate-100 text-xs font-medium">
                 {applications.map((app) => {
                   const reqObj = typeof app.requirementId === 'object' ? app.requirementId : null;
                   const companyObj = reqObj && typeof reqObj.companyId === 'object' ? reqObj.companyId : null;
@@ -136,9 +120,9 @@ export const StudentApplicationsPage: React.FC = () => {
 
                   return (
                     <tr key={app._id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 overflow-hidden shrink-0">
+                          <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 text-sm overflow-hidden shrink-0">
                             {companyLogo ? (
                               <img src={companyLogo} alt={companyName} className="w-full h-full object-cover" />
                             ) : (
@@ -146,54 +130,43 @@ export const StudentApplicationsPage: React.FC = () => {
                             )}
                           </div>
                           <div>
-                            <div className="font-extrabold text-slate-900 text-base leading-tight">
-                              {title}
-                            </div>
-                            <div className="text-xs font-semibold text-slate-500">{companyName}</div>
+                            <div className="font-semibold text-slate-900 text-sm">{title}</div>
+                            <div className="text-xs text-slate-500">{companyName}</div>
                           </div>
                         </div>
                       </td>
-
-                      <td className="py-4 px-6 text-xs text-slate-600">
+                      <td className="py-3.5 px-5 text-slate-600">
                         {new Date(app.appliedAt).toLocaleDateString()}
                       </td>
-
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         {app.resumeUrl ? (
                           <a
                             href={app.resumeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors"
+                            className="inline-flex items-center gap-1 text-indigo-600 font-medium hover:underline text-xs"
                           >
                             <FileText className="w-3.5 h-3.5" />
-                            <span>View Resume</span>
+                            <span>Resume</span>
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         ) : (
-                          <span className="text-slate-400 text-xs">N/A</span>
+                          <span className="text-slate-400">N/A</span>
                         )}
                       </td>
-
-                      <td className="py-4 px-6">{getStatusBadge(app.status)}</td>
-
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <Link
-                            to={`/applications/${app._id}`}
-                            className="p-2 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                            title="View Application Details"
-                          >
-                            <ChevronRight className="w-5 h-5" />
+                      <td className="py-3.5 px-5">{getStatusBadge(app.status)}</td>
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link to={`/applications/${app._id}`}>
+                            <Button variant="ghost" size="sm">
+                              <span>Details</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </Button>
                           </Link>
-
                           {app.status === 'APPLIED' && (
-                            <button
-                              onClick={() => handleWithdraw(app._id, title)}
-                              className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs transition-colors"
-                            >
+                            <Button variant="danger" size="sm" onClick={() => handleWithdraw(app._id, title)}>
                               Withdraw
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>
@@ -202,6 +175,34 @@ export const StudentApplicationsPage: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-4">
+            {applications.map((app) => {
+              const reqObj = typeof app.requirementId === 'object' ? app.requirementId : null;
+              const companyObj = reqObj && typeof reqObj.companyId === 'object' ? reqObj.companyId : null;
+              const title = reqObj?.title || 'Job Requirement';
+              const companyName = reqObj?.companyName || companyObj?.name || 'Hiring Company';
+
+              return (
+                <div key={app._id} className="card-surface p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold text-slate-900 text-sm">{title}</h3>
+                      <p className="text-xs text-slate-500">{companyName}</p>
+                    </div>
+                    {getStatusBadge(app.status)}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+                    <span>Applied {new Date(app.appliedAt).toLocaleDateString()}</span>
+                    <Link to={`/applications/${app._id}`} className="text-indigo-600 font-medium hover:underline">
+                      View Details →
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
